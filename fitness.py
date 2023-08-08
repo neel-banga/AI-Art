@@ -2,6 +2,7 @@ from PIL import Image
 from random import randint
 import numpy
 import os
+from tqdm import tqdm 
 
 FRAME = 1024
 
@@ -41,12 +42,13 @@ def get_pixel_values(image_path):
             pixel_value = pixel_data[x, y]
             print(f"Pixel at ({x}, {y}): {pixel_value}")
 
-def fitness(image, target_image = 'starry.png', human_input = True):
+def fitness(image, target_image = 'starry.png', human_input = False):
     
     a = make_combos()
     current_pixels = get_pixel_values(image)
     target_pixels = get_pixel_values(target_image)
     loss = 0
+    l = 0
 
     def get_pixel_value(num, val1, val2):
         if num == 0:
@@ -56,13 +58,17 @@ def fitness(image, target_image = 'starry.png', human_input = True):
         if num == 2:
             return val1/val2
 
-    for row in a:
+    for row in tqdm(a):
         x, y = row
-        rc, gc, bc = current_pixels[x-1,y-1]
-        rt, gt, bt = current_pixels[x-1,y-1]
+        try:
+            rc, gc, bc = current_pixels[x,y]
+            rt, gt, bt = target_pixels[x,y]
+        except:
+            continue
 
         operation1, operation2, operation3 = randint(0,2), randint(0,2), randint(0,2)
-        loss += get_pixel_value(operation1, rt ,randint(1,20)) - rc, get_pixel_value(operation2, bt ,randint(1,20)) - bc, get_pixel_value(operation3, gt ,randint(1,20)) - gc
+
+        loss += (get_pixel_value(operation1, rt ,randint(1,20)) - rc) + (get_pixel_value(operation2, bt ,randint(1,20)) - bc) +(get_pixel_value(operation3, gt ,randint(1,20)) - gc)
 
     if human_input:
         while True:
@@ -73,6 +79,7 @@ def fitness(image, target_image = 'starry.png', human_input = True):
                 print('Invalid')
 
         # 1024 * 1024 * 256 = 268435456
+        print(loss)
         loss -= FRAME * FRAME * 256 * human_input
 
     return loss
@@ -80,3 +87,6 @@ def fitness(image, target_image = 'starry.png', human_input = True):
 def save_image(data, path):
     image = Image.fromarray(data)
     image.save(path)
+    #return image
+
+#print(fitness('img.png'))
